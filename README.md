@@ -1,101 +1,193 @@
 # Product Stock Microservice
 
-A microservices-based product and stock management system with authentication.
+A **microservices-based backend system** for product and stock management with authentication, built as part of a **Backend Developer Intern – Technical Assignment**.
 
-## Architecture
+This project focuses on **service isolation, database ownership, JWT-based authentication, and clean REST communication** between services.
 
-- **API Gateway** (Port 5000) - Routes requests and handles authentication
-- **Auth Service** (Port 5001) - User registration and authentication (MongoDB)
-- **Product Service** (Port 5002) - Product and stock management (PostgreSQL)
+---
 
-## Quick Start
+## 🔎 Project Overview
 
-### 1. Install Dependencies
+The system consists of three independent services:
+
+- **API Gateway** – Single entry point for clients (routing + auth validation)
+- **Auth Service** – User & company management, authentication
+- **Product Service** – Product CRUD, stock management, audit logging
+
+Each service:
+
+- Runs independently
+- Owns its own database
+- Communicates via REST APIs
+- Uses environment variables for configuration
+
+---
+
+## ✅ Current Status
+
+### Working
+
+- **Auth Service (Port 5001)**
+
+  - User registration and login
+  - JWT generation with user_id, company_id, role
+  - Password hashing using bcrypt
+
+- **Product Service (Port 5002)**
+
+  - Product creation and listing
+  - Stock updates with validation (no negative stock)
+  - Stock change audit logging
+
+- **Databases**
+
+  - Auth Service → MongoDB (Prisma)
+  - Product Service → PostgreSQL (Prisma)
+
+- **Environment Configuration**
+
+  - Environment variables documented via `.env.example` files
+  - Secrets are not committed to the repository
+
+### Known Limitations
+
+- **API Gateway (Port 5000)**
+
+  - Implemented but routing logic currently causes request hangs
+  - Under refinement
+
+➡️ **For evaluation and testing, services can be accessed directly** (instructions below).
+
+---
+
+## 🏗️ Architecture
+
+```
+Client
+  │
+  ▼
+API Gateway (5000)
+  │
+  ├── Auth Service (5001) ── MongoDB
+  │
+  └── Product Service (5002) ── PostgreSQL
+```
+
+- Gateway validates JWTs and forwards requests
+- Services do not share databases
+- Company-based data isolation enforced at service level
+
+---
+
+## 🚀 Quick Start
+
+### 1️⃣ Install Dependencies
 
 ```bash
-# Install dependencies for each service
 cd api-gateway && npm install
 cd ../auth-micro && npm install
 cd ../product-micro && npm install
 ```
 
-### 2. Setup Environment Variables
+---
 
-Create `.env` files in each service directory:
+### 2️⃣ Setup Environment Variables
 
-**api-gateway/.env**
-```
+Each service contains a `.env.example` file.
+Create a `.env` file in each service directory and provide your own values.
+
+#### api-gateway/.env
+
+```env
 PORT=5000
 AUTH_SERVICE_URL=http://localhost:5001/api
 PRODUCT_SERVICE_URL=http://localhost:5002/api
 JWT_SECRET=your_secret_key_here
 ```
 
-**auth-micro/.env**
-```
+#### auth-micro/.env
+
+```env
 PORT=5001
 DATABASE_URL=your_mongodb_connection_string
 JWT_SECRET=your_secret_key_here
 ```
 
-**product-micro/.env**
-```
+#### product-micro/.env
+
+```env
 PORT=5002
 DATABASE_URL=your_postgresql_connection_string
 JWT_SECRET=your_secret_key_here
 ```
 
-### 3. Setup Databases
+---
+
+### 3️⃣ Setup Databases
 
 ```bash
-# Auth service (MongoDB)
+# Auth Service
 cd auth-micro
 npx prisma generate
 npx prisma db push
 
-# Product service (PostgreSQL)
-cd product-micro
+# Product Service
+cd ../product-micro
 npx prisma generate
 npx prisma db push
 ```
 
-### 4. Start Services
+---
+
+### 4️⃣ Start Services
+
+**Start services in the following order:**
 
 ```bash
-# Terminal 1 - API Gateway
+# Terminal 1
+cd auth-micro
+node server.js
+
+# Terminal 2
+cd product-micro
+node server.js
+
+# Terminal 3
 cd api-gateway
-npm run dev
-
-# Terminal 2 - Auth Service
-cd auth-micro
-npm run dev
-
-# Terminal 3 - Product Service
-cd product-micro
-npm run dev
+node server.js
 ```
 
-## Verify Requirements
+> Note: `node server.js` is recommended instead of `npm run dev` for stability.
 
-### Option 1: Automated Testing Script
+---
+
+## 🧪 Testing the System
+
+### ⚠️ Temporary Testing Approach
+
+Until API Gateway routing is finalized, **test services directly**.
+
+### Auth Service (5001)
+
+- `POST /api/register`
+- `POST /api/login`
+
+### Product Service (5002)
+
+- `POST /api/products`
+- `GET /api/products`
+- `POST /api/update`
+
+All product endpoints require a valid JWT token.
+
+---
+
+## 📌 Sample Requests (curl)
+
+### Register User
 
 ```bash
-# Install axios in root (if not already installed)
-npm install axios dotenv
-
-# Run verification script
-node verify-requirements.js
-```
-
-### Option 2: Manual Testing
-
-Use the checklist in `requirements-checklist.md` and test endpoints manually.
-
-### Option 3: Using curl or Postman
-
-#### 1. Register a User
-```bash
-curl -X POST http://localhost:5000/auth/register \
+curl -X POST http://localhost:5001/api/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "John Doe",
@@ -105,9 +197,10 @@ curl -X POST http://localhost:5000/auth/register \
   }'
 ```
 
-#### 2. Login
+### Login
+
 ```bash
-curl -X POST http://localhost:5000/auth/login \
+curl -X POST http://localhost:5001/api/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@example.com",
@@ -115,62 +208,75 @@ curl -X POST http://localhost:5000/auth/login \
   }'
 ```
 
-#### 3. Create Product (use token from login)
+### Create Product
+
 ```bash
-curl -X POST http://localhost:5000/products \
+curl -X POST http://localhost:5002/api/products \
+  -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -d '{
     "name": "Product 1",
-    "stock": 100
+    "sku": "SKU-001",
+    "quantity": 100
   }'
 ```
-Note: `companyId` is automatically taken from your JWT token. You can only create products for your own company.
 
-#### 4. List Products
-```bash
-curl -X GET http://localhost:5000/products \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
-Note: Returns only products from your company (from JWT token). `companyId` query parameter is not needed.
+---
 
-#### 5. Update Stock
-```bash
-curl -X POST http://localhost:5000/stock/update \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -d '{
-    "productId": "YOUR_PRODUCT_ID",
-    "amount": 50,
-    "type": "increase",
-    "note": "Restocked"
-  }'
-```
-Note: `companyId` is automatically taken from your JWT token. You can only update products from your own company.
+## 📚 API Summary
 
-## API Endpoints
+### Auth Service
 
-### Public Endpoints
-- `POST /auth/register` - Register new user and company
-- `POST /auth/login` - Login and get JWT token
+- `POST /auth/register`
+- `POST /auth/login`
 
-### Protected Endpoints (require JWT token)
-- `POST /products` - Create a new product
-- `GET /products?companyId=xxx` - List products (filter by companyId)
-- `POST /stock/update` - Update product stock (increase/decrease)
+### Product Service
 
-## Requirements Checklist
+- `POST /products`
+- `GET /products`
+- `POST /stock/update`
 
-See `requirements-checklist.md` for a detailed checklist of all requirements.
+---
 
-## Project Structure
+## 🗂️ Project Structure
 
 ```
 product-stock-microservice/
-├── api-gateway/          # API Gateway service
-├── auth-micro/           # Authentication service
-├── product-micro/        # Product and stock service
-├── requirements-checklist.md  # Requirements checklist
-├── verify-requirements.js     # Automated test script
-└── README.md             # This file
+├── api-gateway/
+├── auth-micro/
+├── product-micro/
+├── requirements-checklist.md
+├── verify-requirements.js
+└── README.md
 ```
+
+---
+
+## 📄 Documentation
+
+- Architecture & decisions: **README.md**
+- Requirement mapping: **requirements-checklist.md**
+- Automated verification: **verify-requirements.js**
+
+---
+
+## 🔮 Future Improvements
+
+- Fix API Gateway routing logic
+- Add centralized logging
+- Add pagination & search
+- Dockerize services using Docker Compose
+- Health check endpoints
+
+---
+
+## 👤 Author
+
+**Nilina**
+Backend Developer Intern Candidate
+
+---
+
+## ⚠️ Security Note
+
+Sensitive values such as database URLs and JWT secrets are intentionally excluded from the repository. Environment variables are provided via `.env.example` files.
