@@ -42,6 +42,7 @@ JWT_SECRET=your_secret_key_here
 ```
 PORT=5002
 DATABASE_URL=your_postgresql_connection_string
+JWT_SECRET=your_secret_key_here
 ```
 
 ### 3. Setup Databases
@@ -121,16 +122,17 @@ curl -X POST http://localhost:5000/products \
   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -d '{
     "name": "Product 1",
-    "companyId": "YOUR_COMPANY_ID",
     "stock": 100
   }'
 ```
+Note: `companyId` is automatically taken from your JWT token. You can only create products for your own company.
 
 #### 4. List Products
 ```bash
-curl -X GET "http://localhost:5000/products?companyId=YOUR_COMPANY_ID" \
+curl -X GET http://localhost:5000/products \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
+Note: Returns only products from your company (from JWT token). `companyId` query parameter is not needed.
 
 #### 5. Update Stock
 ```bash
@@ -139,12 +141,12 @@ curl -X POST http://localhost:5000/stock/update \
   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -d '{
     "productId": "YOUR_PRODUCT_ID",
-    "companyId": "YOUR_COMPANY_ID",
     "amount": 50,
     "type": "increase",
     "note": "Restocked"
   }'
 ```
+Note: `companyId` is automatically taken from your JWT token. You can only update products from your own company.
 
 ## API Endpoints
 
