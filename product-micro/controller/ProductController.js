@@ -1,12 +1,11 @@
 import prisma from "../config/db.config.js";
 
 class ProductController {
-  // POST /products
+
   static async createProduct(req, res) {
     try {
       const { name, stock } = req.body;
-      const companyId = req.user.company_id; // Get from JWT token (validated by middleware)
-
+      const companyId = req.user.company_id;
       if (!name) {
         return res.status(400).json({ message: "name is required" });
       }
@@ -32,17 +31,14 @@ class ProductController {
     }
   }
 
-  // GET /products
-  // Lists products for the authenticated user's company only
   static async listProducts(req, res) {
     try {
-      const companyId = req.user.company_id; // Get from JWT token (validated by middleware)
+      const companyId = req.user.company_id;
 
       if (!companyId) {
         return res.status(401).json({ message: "Company ID not found in token" });
       }
 
-      // Only return products from the user's company
       const products = await prisma.product.findMany({
         where: {
           companyId: companyId,
@@ -56,11 +52,10 @@ class ProductController {
     }
   }
 
-  // POST /stock/update
   static async updateStock(req, res) {
     try {
       const { productId, amount, type, note } = req.body;
-      const companyId = req.user.company_id; // Get from JWT token (validated by middleware)
+      const companyId = req.user.company_id;
 
       if (!productId || !amount || !type) {
         return res.status(400).json({
@@ -82,7 +77,6 @@ class ProductController {
         return res.status(404).json({ message: "Product not found" });
       }
 
-      // Validate that the product belongs to the user's company
       if (product.companyId !== companyId) {
         return res.status(403).json({
           message: "Access denied: You can only update products from your own company",
