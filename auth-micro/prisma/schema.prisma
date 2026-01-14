@@ -18,6 +18,17 @@ model User {
   name String
   email String @unique
   password String
+  role String @default("user")
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+}
+
+model Company {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  users User[]
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
 }
