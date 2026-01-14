@@ -1,53 +1,80 @@
 import bcrypt from "bcrypt"
 import "dotenv/config"
-import prisma from "../config/db.   config.js";
+import prisma from "../config/db.config.js";
 import jwt from "jsonwebtoken"
 
 class AuthController {
     static async register(req, res) {
         try {
-            const payload = req.body;
-            const salt = bcrypt.genSaltSync(10)
-            payload.password = bcrypt.hashSync(payload.password, salt);
+            const { name, email, password, companyName } = req.body;
+            if (!name || !email || !password || !companyName) {
+                return res.status(400).json({ message: "name, email, password and companyName are required" });
+            }
+            const salt = bcrypt.genSaltSync(10);
+            const hashedPassword = bcrypt.hashSync(password, salt);
+            const company = await prisma.company.create({
+                data: {
+                    name: companyName,
+                },
+            });
 
             const user = await prisma.user.create({
-                data: payload,
-            })
-
-            return res.json({ message: "Account created successfully", user })
+                data: {
+                    name,
+                    email,
+                    password: hashedPassword,
+                    companyId: company.id,
+                    role: "admin",
+                },
+            });
+            return res.json({ message: "Account created successfully", user, company });
         } catch (error) {
-            return res.status(500).json({ message: "Something went wrong" })
+            console.error(error);
+            return res.status(500).json({ message: "Something went wrong" });
         }
-
     }
 
     static async login(req, res) {
-        const { email, password } = req.body
-        const user = await prisma.user.findUnique({
-            where: {
-                email: email
-            }
-        })
+        try {
+            const { email, password } = req.body;
 
-        if (user) {
-            //check both passwords 
-            if (bcrypt.compareSync(password, user.password)) {
-
-                return res.status(401).json({ message: "Invalid credentials" })
+            if (!email || !password) {
+                return res.status(400).json({ message: "email and password are required" });
             }
+
+            const user = await prisma.user.findUnique({
+                where: {
+                    email: email,
+                },
+            });
+
+            if (!user) {
+                return res.status(401).json({ message: "Invalid credentials" });
+            }
+
+            const passwordsMatch = bcrypt.compareSync(password, user.password);
+            if (!passwordsMatch) {
+                return res.status(401).json({ message: "Invalid credentials" });
+            }
+
             const payload = {
-                id: user.id,
-                name: user.name,
-                email: user.email,
+                user_id: user.id,
+                company_id: user.companyId,
+                role: user.role,
             };
 
-            const token = jwt.sign(payload, process.env.JWT_SECRET, {
-                expiresIn: "365d",
-            })
+            const token = jwt.sign(payload, process.env.JWT_SECRET , {
+                expiresIn: "1d",
+            });
 
-            return res.json({ message: "Logged in successfully", access_token: `Bearer: {token}` })
+            return res.json({
+                message: "Logged in successfully",
+                access_token: `Bearer ${token}`,
+            });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Something went wrong" });
         }
-        return res.status(401).json({ message: "Invalid credentials" })
     }
 }
 
