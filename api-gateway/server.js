@@ -63,15 +63,15 @@ async function forwardRequest(targetBaseUrl, req, res, pathPrefix) {
   }
 }
 
-app.use("/auth", async (req, res) => {
+app.all(/^\/auth(\/.*)?$/, async (req, res) => {
   await forwardRequest(AUTH_SERVICE_URL, req, res, "/auth");
 });
 
-app.use("/products", authMiddleware, async (req, res) => {
+app.all(/^\/products(\/.*)?$/, authMiddleware, async (req, res) => {
   await forwardRequest(PRODUCT_SERVICE_URL, req, res, "/products");
 });
 
-app.use("/stock", authMiddleware, async (req, res) => {
+app.all(/^\/stock(\/.*)?$/, authMiddleware, async (req, res) => {
   await forwardRequest(PRODUCT_SERVICE_URL, req, res, "/stock");
 });
 
