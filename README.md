@@ -1,6 +1,6 @@
 # Product Stock Microservice
 
-A **microservices-based backend system** for product and stock management with authentication, built as part of a **Backend Developer Intern – Technical Assignment**.
+A **microservices-based backend system** for product and stock management with authentication.
 
 This project focuses on **service isolation, database ownership, JWT-based authentication, and clean REST communication** between services.
 
@@ -272,8 +272,7 @@ product-stock-microservice/
 
 ## 👤 Author
 
-**Nilina**
-Backend Developer Intern Candidate
+**Nilina Nilaksha Amarathunga**
 
 ---
 
