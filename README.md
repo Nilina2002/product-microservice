@@ -42,7 +42,7 @@ Each service:
 - **Databases**
 
   - Auth Service → MongoDB (Prisma)
-  - Product Service → PostgreSQL (Prisma)
+  - Product Service → MongoDB (Prisma)
 
 - **Environment Configuration**
 
@@ -70,7 +70,7 @@ API Gateway (5000)
   │
   ├── Auth Service (5001) ── MongoDB
   │
-  └── Product Service (5002) ── PostgreSQL
+  └── Product Service (5002) ── MongoDB
 ```
 
 - Gateway validates JWTs and forwards requests
@@ -117,7 +117,7 @@ JWT_SECRET=your_secret_key_here
 
 ```env
 PORT=5002
-DATABASE_URL=your_postgresql_connection_string
+DATABASE_URL=your_mongodb_connection_string
 JWT_SECRET=your_secret_key_here
 ```
 
